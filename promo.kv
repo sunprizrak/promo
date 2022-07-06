@@ -1,0 +1,341 @@
+#:import RiseInTransition kivy.uix.screenmanager.RiseInTransition
+
+SM:
+    transition: RiseInTransition()
+
+    StartScreen:
+    LoginScreen:
+        id: log_screen
+    RegistrationScreen:
+        id: reg_screen
+    PersonalAreaScreen:
+        id: personal_area_screen
+
+
+<SM@ScreenManager>
+
+<BackButton@MDIconButton>
+    icon: 'arrow-left-bold'
+    theme_text_color: 'Secondary'
+    pos_hint: {'y': .9}
+
+<MyToolbar@MDToolbar>
+    title: 'Promo Jet'
+    anchor_title: 'center'
+    elevation: 20
+
+
+<StartScreen@MDScreen>
+    name: 'start_screen'
+
+    MDFloatLayout:
+
+        MDTextButton:
+            text: 'Войти'
+            theme_text_color: 'Secondary'
+            pos_hint: {'x': .8, 'y': .9}
+            on_release:
+                app.root.current = 'login_screen'
+
+        MDLabel:
+            text: 'Promo JET'
+            theme_text_color: 'Secondary'
+            font_size: dp(20)
+            halign: 'center'
+
+        MDFillRoundFlatButton:
+            id: b_registration
+            text: 'Начать'
+            theme_text_color: 'Secondary'
+            #md_bg_color: 0, 1, 0, 1
+            text_color: 0, 0, 0, 0
+            font_size: '20sp'
+            pos_hint: {'center_x': .5, 'y': .1}
+            on_release:
+                app.root.current = 'registration_screen'
+
+
+<LoginScreen@MDScreen>
+    name: 'login_screen'
+
+    MDFloatLayout:
+
+        BackButton:
+            on_release:
+                app.root.current = 'start_screen'
+                email_field.text = ''
+                password_field.text = ''
+
+        MDCard:
+            orientation: 'vertical'
+            padding: '5dp'
+            spacing: 15
+            size_hint: None, None
+            size: '280dp', '180dp'
+            pos_hint: {'center_x': .5, 'center_y': .5}
+
+            MDLabel:
+                text: 'Войти'
+                theme_text_color: 'Secondary'
+                height: self.texture_size[1]
+                font_size: dp(20)
+                halign: 'center'
+
+            MDTextFieldRound:
+                id: email_field
+                hint_text: 'email'
+                icon_left: 'email'
+                color_active: 0, 1, 0, 1
+                width: 200
+                size_hint_x: None
+                pos_hint: {'center_x': .5}
+
+            MDRelativeLayout:
+                size_hint_y: None
+                height: password_field.height
+
+                MDTextFieldRound:
+                    id: password_field
+                    hint_text: 'Пароль'
+                    password: True
+                    icon_left: 'key-variant'
+                    color_active: 0, 1, 0, 1
+                    width: 200
+                    size_hint_x: None
+                    pos_hint: {'center_x': .5}
+
+                MDIconButton:
+                    icon: "eye"
+                    pos_hint: {"center_y": .5}
+                    pos: password_field.width - self.width + dp(50), 0
+                    theme_text_color: "Hint"
+                    on_release:
+                        self.icon = "eye" if self.icon == "eye-off" else "eye-off"
+                        password_field.password = False if password_field.password is True else True
+
+            MDRoundFlatButton:
+                id: b_sing_in
+                text: 'Войти'
+                font_size: '15sp'
+                pos_hint: {'center_x': .5, 'center_y': .5}
+                on_release:
+                    app.sing_in(email_field.text, password_field.text)
+
+<RegTextField@MDTextField>
+    mode: "rectangle"
+    helper_text: 'Это поле не может быть пустым'
+    helper_text_mode: "on_error"
+    required: True
+    size_hint: (0.8, None)
+    pos_hint: {"center_x": .5}
+
+<RegistrationScreen@MDScreen>
+    name: 'registration_screen'
+
+    MDFloatLayout:
+
+        BackButton:
+            on_release:
+                app.root.current = 'start_screen'
+
+        MDBoxLayout:
+            orientation: 'vertical'
+            size_hint_y: None
+            height: self.minimum_height
+            spacing: 10
+
+            MDLabel:
+                text: 'Создание учётной записи'
+                theme_text_color: 'Secondary'
+                font_size: dp(17)
+                halign: 'center'
+
+            RegTextField:
+                id: reg_email
+                hint_text: "Email"
+
+
+            RegTextField:
+                id: reg_first_name
+                hint_text: "Имя"
+
+            RegTextField:
+                id: reg_last_name
+                hint_text: "Фамилия"
+
+            RegTextField:
+                id: reg_middle_name
+                hint_text: "Отчество"
+
+            MDRelativeLayout:
+                size_hint_y: None
+                height: reg_birth_date.height
+
+                RegTextField:
+                    id: reg_birth_date
+                    hint_text: 'Дата Рождения'
+
+                MDIconButton:
+                    icon: "calendar"
+                    pos_hint: {"center_y": .4}
+                    pos: reg_birth_date.width - self.width + dp(50), 0
+                    theme_text_color: "Hint"
+                    on_release:
+                        app.show_date_picker()
+
+            RegTextField:
+                id: reg_phone_number
+                hint_text: "Номер телефона"
+
+            MDRelativeLayout:
+                size_hint_y: None
+                height: reg_password.height
+
+                RegTextField:
+                    id: reg_password
+                    hint_text: 'Пароль'
+                    password: True
+
+                MDIconButton:
+                    icon: "eye"
+                    pos_hint: {"center_y": .4}
+                    pos: reg_password.width - self.width + dp(50), 0
+                    theme_text_color: "Hint"
+                    on_release:
+                        self.icon = "eye" if self.icon == "eye-off" else "eye-off"
+                        reg_password.password = False if reg_password.password is True else True
+
+            MDRelativeLayout:
+                size_hint_y: None
+                height: reg_re_password.height
+
+                RegTextField:
+                    id: reg_re_password
+                    hint_text: 'Повторите пароль'
+                    password: True
+
+                MDIconButton:
+                    icon: "eye"
+                    pos_hint: {"center_y": .4}
+                    pos: reg_re_password.width - self.width + dp(50), 0
+                    theme_text_color: "Hint"
+                    on_release:
+                        self.icon = "eye" if self.icon == "eye-off" else "eye-off"
+                        reg_re_password.password = False if reg_re_password.password is True else True
+
+            MDRoundFlatButton:
+                id: b_reg
+                text: 'Создать'
+                font_size: '15sp'
+                pos_hint: {'center_x': .5, 'center_y': .5}
+                padding: '5dp'
+                on_release:
+                    app.registration(reg_email.text, reg_first_name.text, reg_last_name.text, reg_middle_name.text,
+                    reg_birth_date.text, reg_phone_number.text, reg_password.text, reg_re_password.text)
+
+
+<PersonalAreaScreen@MDScreen>
+    name: 'personal_area_screen'
+
+    MDBottomNavigation:
+        panel_color: app.theme_cls.primary_color
+        text_color_active: 2, 1, 4, 1
+
+        MDBottomNavigationItem:
+            name: "nav_item_profile"
+            icon: 'account'
+
+            MDBoxLayout:
+                orientation: 'vertical'
+                spacing: 15
+
+                MyToolbar:
+                    id: my_tool_bar
+                    right_action_items: [['logout', lambda x: app.logout()]]
+
+                MDFloatLayout:
+
+                    FitImage:
+                        id: profile_avatar
+                        size_hint_x: .35
+                        size_hint_y: .6
+                        radius: [50, 50, 50, 50]
+                        pos_hint: {'center_x': .5, 'center_y': .7}
+
+                    MDLabel:
+                        id: profile_full_name
+                        theme_text_color: 'Secondary'
+                        #font_size: dp(17)
+                        halign: 'center'
+                        pos_hint: {'center_y': .3}
+
+                    MDLabel:
+                        id: profile_email
+                        theme_text_color: 'Secondary'
+                        #font_size: dp(17)
+                        halign: 'center'
+                        pos_hint: {'center_y': .2}
+
+                    MDIconButton:
+                        icon: 'account-edit'
+                        user_font_size: '30sp'
+                        theme_text_color: 'Custom'
+                        text_color: app.theme_cls.primary_color
+                        pos_hint: {'center_x': .9, 'center_y': .9}
+
+                MDGridLayout:
+                    cols: 2
+                    rows: 5
+                    padding: [10, 0, 10, 0]
+
+                    MDLabel:
+                        text: 'Должность:'
+                        theme_text_color: 'Secondary'
+
+                    MDLabel:
+                        id: profile_position
+                        theme_text_color: 'Secondary'
+
+                    MDLabel:
+                        text: 'Дата рождения:'
+                        theme_text_color: 'Secondary'
+
+                    MDLabel:
+                        id: profile_birth_date
+                        theme_text_color: 'Secondary'
+
+                    MDLabel:
+                        text: 'Номер телефона:'
+                        theme_text_color: 'Secondary'
+
+                    MDLabel:
+                        id: profile_phone_number
+                        theme_text_color: 'Secondary'
+
+                    MDLabel:
+                        text: 'telegram:'
+                        theme_text_color: 'Secondary'
+
+                    MDLabel:
+                        id: profile_site_one
+                        theme_text_color: 'Secondary'
+
+                    MDLabel:
+                        text: 'instagram:'
+                        theme_text_color: 'Secondary'
+
+                    MDLabel:
+                        id: profile_site_two
+                        theme_text_color: 'Secondary'
+
+        MDBottomNavigationItem:
+            name: "nav_item_schedule"
+            icon: 'calendar-month'
+
+        MDBottomNavigationItem:
+            name: "nav_item_scooter"
+            icon: 'scooter'
+
+        MDBottomNavigationItem:
+            name: "nav_item_ticket"
+            icon: 'ticket'
