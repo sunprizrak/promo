@@ -2,10 +2,11 @@ from kivymd.app import MDApp
 from kivy.graphics.svg import Window
 from kivymd.uix.button import MDFlatButton
 from kivymd.uix.dialog import MDDialog
+from kivymd.uix.filemanager import MDFileManager
+from kivymd.uix.menu import MDDropdownMenu
 from kivymd.uix.picker import MDDatePicker
-import requests
 from user import User
-
+import requests
 
 Window.size = (360, 600)
 
@@ -18,6 +19,54 @@ class PromoApp(MDApp):
     path_logout = host_name + '/auth/token/logout/'
     path_data_user = host_name + '/auth/users/me/'
     dialog = None
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        menu_items = [
+            {
+                'text': 'Редактировать',
+                'viewclass': 'OneLineListItem',
+                'on_release': lambda x='profile_edit_screen': (self.menu.dismiss(), self.update_screen(x), setattr(self.root, 'current', x)),
+            },
+            {
+                'text': 'Выйти',
+                'viewclass': 'OneLineListItem',
+                'on_release': lambda: (self.menu.dismiss(), self.logout()),
+            },
+        ]
+        self.menu = MDDropdownMenu(
+            items=menu_items,
+            width_mult=2.5,
+        )
+        self.manager_open = False
+        self.file_manager = MDFileManager(
+            exit_manager=self.exit_manager,
+            select_path=self.select_path,
+            preview=True,
+        )
+
+    def file_manager_open(self):
+        self.file_manager.show('/')
+        self.manager_open = True
+
+    def select_path(self, path):
+        self.exit_manager()
+        if self.root.current == 'profile_edit_screen':
+            self.root.ids.prof_ed_screen.ids.edit_avatar.text = path
+
+    def exit_manager(self, *args):
+        self.manager_open = False
+        self.file_manager.close()
+
+    def events(self, instance, keyboard, keycode, text, modifiers):
+        if keyboard in (1001, 27):
+            if self.manager_open:
+                self.file_manager.back()
+        return True
+
+    def menu_callback(self, button):
+        self.menu.caller = button
+        self.menu.open()
 
     def show_alert_dialog(self):
         self.dialog = MDDialog(
@@ -37,7 +86,10 @@ class PromoApp(MDApp):
         self.dialog.dismiss()
 
     def on_save_date_picker(self, instance, value, date_range):
-        self.root.ids.reg_screen.ids.reg_birth_date.text = str(value)
+        if self.root.current == 'registration_screen':
+            self.root.ids.reg_screen.ids.reg_birth_date.text = str(value)
+        elif self.root.current == 'profile_edit_screen':
+            self.root.ids.prof_ed_screen.ids.edit_birth_date.text = str(value)
 
     def on_cancel_date_picker(self, instance, value):
         pass
@@ -68,9 +120,7 @@ class PromoApp(MDApp):
                             self.root.ids.reg_screen.ids.get(f'reg_{el}').error = True
                     self.root.ids.reg_screen.ids.get(f'reg_{el}').focus = True
                     self.root.ids.reg_screen.ids.get(f'reg_{el}').focus = False
-                    if el == 'birth_date':
-                        self.root.ids.reg_screen.ids.get(f'reg_{el}').helper_text = data_reg.json()[el][0].split('.')[1]
-                    elif el == 'password':
+                    if el == 'password':
                         self.show_alert_dialog()
                         self.dialog.text = ''.join([f'! {item} \n' for item in data_reg.json().get(el)])
                     else:
@@ -82,18 +132,29 @@ class PromoApp(MDApp):
                         self.root.ids.reg_screen.ids.get(f'reg_{item}').focus = False
                         self.root.ids.reg_screen.ids.get(f'reg_{item}').helper_text = data_reg.json()[el][0]
 
+    def update_screen(self, screen):
+        if screen == 'personal_area_screen':
+            for el in self.root.ids.personal_area_screen.ids:
+                if el[8:] in self.user.__dict__:
+                    if el[8:] == 'avatar':
+                        self.root.ids.personal_area_screen.ids[el].source = self.user.__dict__[el[8:]]
+                    else:
+                        self.root.ids.personal_area_screen.ids[el].text = self.user.__dict__[el[8:]]
+                elif el[8:] == 'full_name':
+                    self.root.ids.personal_area_screen.ids[el].text = f'{self.user.last_name} {self.user.first_name} {self.user.middle_name}'
+        elif screen == 'profile_edit_screen':
+            for el in self.root.ids.prof_ed_screen.ids:
+                if el[5:] in self.user.__dict__:
+                    if el[5:] == 'avatar':
+                        self.root.ids.prof_ed_screen.ids[el].text = ''
+                    else:
+                        self.root.ids.prof_ed_screen.ids[el].text = self.user.__dict__[el[5:]]
+
     def sing_in(self, email, password):
         self.user.get_token(path=self.path_login, email=email, password=password)
         if self.user.token:
             self.user.update(self.user.data_user(path=self.path_data_user, token=self.user.token))
-            self.root.ids.personal_area_screen.ids.profile_avatar.source = self.user.avatar
-            self.root.ids.personal_area_screen.ids.profile_full_name.text = f'{self.user.first_name} {self.user.last_name} {self.user.middle_name}'
-            self.root.ids.personal_area_screen.ids.profile_email.text = self.user.email
-            self.root.ids.personal_area_screen.ids.profile_birth_date.text = self.user.birth_date
-            self.root.ids.personal_area_screen.ids.profile_position.text = self.user.position
-            self.root.ids.personal_area_screen.ids.profile_phone_number.text = self.user.phone_number
-            self.root.ids.personal_area_screen.ids.profile_site_one.text = self.user.site_one
-            self.root.ids.personal_area_screen.ids.profile_site_two.text = self.user.site_two
+            self.update_screen('personal_area_screen')
             if self.root.current == 'login_screen':
                 self.root.ids.log_screen.ids.email_field.text = ''
                 self.root.ids.log_screen.ids.password_field.text = ''
@@ -105,6 +166,33 @@ class PromoApp(MDApp):
         else:
             self.show_alert_dialog()
             self.dialog.text = '! Неверно введён email или пароль'
+
+    def edit_profile(self, *args):
+        email, first_name, last_name, middle_name, birth_date, phone_number, site_one, site_two, avatar = args
+        img = {'avatar': open(avatar, 'rb')} if avatar else None
+        data_user = requests.patch(self.path_data_user, files=img, headers={'Authorization': f'Token {self.user.token}'}, data={
+                                    'email': email,
+                                    'first_name': first_name,
+                                    'last_name': last_name,
+                                    'middle_name': middle_name,
+                                    'birth_date': birth_date,
+                                    'phone_number': phone_number,
+                                    'site_one': site_one,
+                                    'site_two': site_two, })
+        if data_user.__dict__.get('status_code') == 200:
+            self.user.update(data_user.json())
+            self.update_screen('personal_area_screen')
+            self.show_alert_dialog()
+            self.dialog.title = 'Успех'
+            self.dialog.text = 'Данные Успешно изменены'
+        elif data_user.__dict__.get('status_code') == 400:
+            print(data_user.json())
+            for el in data_user.json():
+                if f'edit_{el}' in self.root.ids.prof_ed_screen.ids:
+                    self.root.ids.prof_ed_screen.ids.get(f'edit_{el}').helper_text = data_user.json()[el][0]
+                    self.root.ids.prof_ed_screen.ids.get(f'edit_{el}').error = True
+                    self.root.ids.prof_ed_screen.ids.get(f'edit_{el}').focus = True
+                    self.root.ids.prof_ed_screen.ids.get(f'edit_{el}').focus = False
 
     def logout(self):
         self.user.del_token(path=self.path_logout, token=self.user.token)
